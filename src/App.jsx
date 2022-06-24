@@ -1,63 +1,58 @@
 
 import './component.css'
 
-import {useEffect,useState} from 'react'
-
-function App() {
-
-  const [listpokemon, setlistpokemon] = useState({
-    results: [],
-  });
+import React from 'react'
+import CardPokemon from './CardPokemon'
+import { useState, useEffect } from 'react'
 
 
-  const fetchPokeApi = async (item, url = "https://pokeapi.co/api/v2/pokemon?limit=175") => {
-    const respuesta = await fetch(url);
-    const respJson = await respuesta.json();
+const App = () => {
 
-    if (item === "results") {
-      setlistpokemon({
-        ...listpokemon,
-        results: respJson.results,
-      });
-    } else {
-      setlistpokemon({
-        ...listpokemon,
-        [item]: respJson,
-      });
+
+  const[allPokemons, setAllPokemons] = useState([])
+  const[loadMore, setLoadMore] = useState('https://pokeapi.co/api/v2/pokemon?limit=151')
+
+   const getAllPokemons = async () => {
+    const res = await fetch(loadMore)
+    const data = await res.json()
+    setLoadMore(data.next)
+
+    function createPokemonObject(results)  {
+      results.forEach( async pokemon => {
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemon.name}`)
+        const data =  await res.json()
+        setAllPokemons( currentList => [...currentList, data])
+        await allPokemons.sort((a, b) => a.id - b.id)
+      })
     }
-  };
-    
+    createPokemonObject(data.results)
+  }
 
-    useEffect(()=>{
-      fetchPokeApi("results");
-    }, []);
-    
+  useEffect(() => {
+    getAllPokemons()
+   }, [])
 
   return (
-    <div className='cuerpo'>
-      <div className='part1'>
-        <h1>Pokedex</h1>
-      </div>
-      <div className='grid'>
-        {
-          listpokemon.results.map((result,index)=>(
-            <div className='card' >
-              <img  src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/dream-world/${(index+1)}.svg`} />
-              <p key={result.name}>{result.name}</p>
-              
-            </div>
-          ))
-        }
-      </div>
-      <div>
-        {
+    <div>
 
-        }
-      </div>
+      <h2>pokeApi</h2>
+      <section>
+                <div  className="all-container">
+                  {allPokemons.map( (pokemonStats, index) => 
+                    <CardPokemon
+                      key={index}
+                      id={pokemonStats.id}
+                      image={pokemonStats.sprites.other.dream_world.front_default}
+                      name={pokemonStats.name}
+                      tipo={pokemonStats.types[0].type.name}
+                      altura={pokemonStats.height}
+                      habilidad={pokemonStats.base_experience}
+                    />)}
+              </div>
+      </section>
+      <button className="load-more" onClick={() => getAllPokemons()}>Mas Pokemons</button>
     </div>
-      
-     
-  );
+  )
 }
 
-export default App;
+export default App
